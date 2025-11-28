@@ -1,0 +1,126 @@
+# Fastfile per build IPA ad-hoc
+# 
+# Questo file configura fastlane per:
+# 1. Autenticarsi con App Store Connect API
+# 2. Scaricare/aggiornare il provisioning profile ad-hoc
+# 3. Compilare l'app
+# 4. Esportare l'IPA
+
+default_platform(:ios)
+
+platform :ios do
+
+  desc "Build IPA ad-hoc per distribuzione tester"
+  lane :build_adhoc do
+    
+    # ==========================================
+    # CONFIGURAZIONE - TODO: PERSONALIZZA QUESTI VALORI
+    # ==========================================
+    
+    # TODO: Sostituisci con il tuo bundle identifier
+    app_id = "com.mydomain.myapp"
+    
+    # TODO: Sostituisci con il nome del tuo scheme Xcode
+    scheme_name = "MyApp"
+    
+    # TODO: Sostituisci con il path del tuo progetto .xcodeproj o .xcworkspace
+    # Se usi CocoaPods/SPM con workspace:
+    # workspace_path = "MyApp.xcworkspace"
+    # Altrimenti:
+    # project_path = "MyApp.xcodeproj"
+    
+    # ==========================================
+    # AUTENTICAZIONE APP STORE CONNECT
+    # ==========================================
+    
+    # Crea la chiave API da variabili d'ambiente
+    api_key = app_store_connect_api_key(
+      key_id: ENV["ASC_KEY_ID"],
+      issuer_id: ENV["ASC_ISSUER_ID"],
+      key_content: ENV["ASC_PRIVATE_KEY"],
+      in_house: false  # false per account Developer standard
+    )
+    
+    # ==========================================
+    # PROVISIONING PROFILE
+    # ==========================================
+    
+    # Scarica/aggiorna il provisioning profile ad-hoc
+    # sigh gestisce automaticamente la registrazione dei nuovi device
+    sigh(
+      api_key: api_key,
+      adhoc: true,
+      app_identifier: app_id,
+      force: true,  # Forza il refresh per includere nuovi device
+      readonly: false
+    )
+    
+    # ==========================================
+    # BUILD
+    # ==========================================
+    
+    # Compila e esporta l'IPA
+    gym(
+      api_key: api_key,
+      scheme: scheme_name,
+      export_method: "ad-hoc",
+      output_directory: "build",
+      output_name: "app-adhoc.ipa",
+      clean: true,
+      
+      # Se usi workspace (CocoaPods/SPM):
+      # workspace: workspace_path,
+      
+      # Se usi project:
+      # project: project_path,
+      
+      # Opzioni aggiuntive:
+      export_options: {
+        compileBitcode: false,
+        uploadSymbols: false
+      }
+    )
+    
+    UI.success("✅ IPA creata con successo in build/app-adhoc.ipa")
+  end
+  
+  # ==========================================
+  # LANE AGGIUNTIVE (opzionali)
+  # ==========================================
+  
+  desc "Registra un nuovo device manualmente"
+  lane :register_device do |options|
+    api_key = app_store_connect_api_key(
+      key_id: ENV["ASC_KEY_ID"],
+      issuer_id: ENV["ASC_ISSUER_ID"],
+      key_content: ENV["ASC_PRIVATE_KEY"],
+      in_house: false
+    )
+    
+    register_devices(
+      api_key: api_key,
+      devices: {
+        options[:name] => options[:udid]
+      }
+    )
+    
+    UI.success("✅ Device registrato: #{options[:name]} (#{options[:udid]})")
+  end
+  
+  desc "Lista tutti i device registrati"
+  lane :list_devices do
+    api_key = app_store_connect_api_key(
+      key_id: ENV["ASC_KEY_ID"],
+      issuer_id: ENV["ASC_ISSUER_ID"],
+      key_content: ENV["ASC_PRIVATE_KEY"],
+      in_house: false
+    )
+    
+    # Questo stamperà i device nella console
+    # Per ora fastlane non ha un'action built-in per listare device
+    # ma l'API key è configurata per eventuali usi futuri
+    UI.message("API Key configurata. Usa il backend per gestire i device.")
+  end
+
+end
+

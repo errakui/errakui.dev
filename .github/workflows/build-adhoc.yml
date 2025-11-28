@@ -1,0 +1,123 @@
+# GitHub Actions Workflow per build IPA ad-hoc
+#
+# Questo workflow viene triggerato dal backend via workflow_dispatch
+# quando un nuovo tester registra il suo device.
+#
+# Input:
+# - buildId: ID della build (dal backend)
+# - testerId: ID del tester (per notifica email)
+
+name: Build Adhoc IPA
+
+on:
+  workflow_dispatch:
+    inputs:
+      buildId:
+        description: 'Build ID from backend'
+        required: true
+        type: string
+      testerId:
+        description: 'Tester ID from backend'
+        required: true
+        type: string
+
+jobs:
+  build-adhoc:
+    runs-on: macos-latest
+    
+    steps:
+      # ==========================================
+      # SETUP
+      # ==========================================
+      
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+          working-directory: ios
+
+      - name: Install Fastlane dependencies
+        run: |
+          cd ios
+          bundle install
+
+      # ==========================================
+      # BUILD IPA
+      # ==========================================
+      
+      - name: Build Adhoc IPA
+        env:
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+        run: |
+          cd ios
+          bundle exec fastlane build_adhoc
+
+      # ==========================================
+      # UPLOAD ARTIFACT
+      # ==========================================
+      
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: adhoc-ipa-${{ github.event.inputs.buildId }}
+          path: ios/build/*.ipa
+          retention-days: 30
+
+      # ==========================================
+      # NOTIFY BACKEND
+      # ==========================================
+      
+      # TODO: Configura l'hosting dell'IPA
+      # Opzioni:
+      # 1. GitHub Releases (usando gh cli)
+      # 2. AWS S3
+      # 3. Firebase App Distribution
+      # 4. Il tuo server
+      #
+      # Per ora usiamo l'URL dell'artifact di GitHub Actions
+      # NOTA: Gli artifact non sono pubblici, dovrai configurare un hosting reale
+      
+      - name: Get artifact URL
+        id: artifact_url
+        run: |
+          # TODO: Sostituisci con l'URL reale dell'IPA hostata
+          # Questo è un placeholder - gli artifact di GitHub non sono accessibili pubblicamente
+          DOWNLOAD_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          echo "download_url=${DOWNLOAD_URL}" >> $GITHUB_OUTPUT
+
+      - name: Notify backend - Build completed
+        env:
+          PUBLIC_BASE_URL: ${{ secrets.PUBLIC_BASE_URL }}
+        run: |
+          BUILD_ID="${{ github.event.inputs.buildId }}"
+          TESTER_ID="${{ github.event.inputs.testerId }}"
+          DOWNLOAD_URL="${{ steps.artifact_url.outputs.download_url }}"
+          
+          echo "📤 Notifica backend..."
+          echo "   Build ID: ${BUILD_ID}"
+          echo "   Tester ID: ${TESTER_ID}"
+          echo "   Download URL: ${DOWNLOAD_URL}"
+          
+          # Chiama l'endpoint del backend
+          curl -X POST "${PUBLIC_BASE_URL}/build-completed" \
+            -H "Content-Type: application/json" \
+            -d "{\"buildId\":\"${BUILD_ID}\",\"downloadUrl\":\"${DOWNLOAD_URL}\",\"testerId\":\"${TESTER_ID}\"}" \
+            --fail --silent --show-error
+          
+          echo "✅ Backend notificato con successo!"
+
+      # ==========================================
+      # CLEANUP (opzionale)
+      # ==========================================
+      
+      - name: Cleanup build artifacts
+        if: always()
+        run: |
+          rm -rf ios/build/*.ipa || true
+
