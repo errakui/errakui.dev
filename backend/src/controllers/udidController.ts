@@ -211,11 +211,38 @@ export async function udidCallback(req: Request, res: Response): Promise<void> {
       status: 'DEVICE_REGISTERED',
     });
 
-    // Rispondi immediatamente a iOS con pagina di conferma
-    res.status(200).send(successPage(tester.email));
-
     // === OPERAZIONI ASINCRONE (non bloccano la response) ===
     processDeviceRegistration(testerId, udid);
+
+    // iOS Profile Service richiede una risposta con un profilo vuoto
+    // che dice "installazione completata" o un redirect
+    const emptyProfile = `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>PayloadContent</key>
+  <array/>
+  <key>PayloadDescription</key>
+  <string>Dispositivo registrato con successo. Puoi eliminare questo profilo.</string>
+  <key>PayloadDisplayName</key>
+  <string>Registrazione Completata</string>
+  <key>PayloadIdentifier</key>
+  <string>dev.errakui.registration-complete.${testerId}</string>
+  <key>PayloadOrganization</key>
+  <string>${env.ORG_NAME}</string>
+  <key>PayloadRemovalDisallowed</key>
+  <false/>
+  <key>PayloadType</key>
+  <string>Configuration</string>
+  <key>PayloadUUID</key>
+  <string>${uuidv4().toUpperCase()}</string>
+  <key>PayloadVersion</key>
+  <integer>1</integer>
+</dict>
+</plist>`;
+
+    res.setHeader('Content-Type', 'application/x-apple-aspen-config');
+    res.status(200).send(emptyProfile);
 
   } catch (error) {
     console.error('❌ Errore in udidCallback:', error);
