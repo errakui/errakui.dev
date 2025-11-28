@@ -1,3 +1,8 @@
+# fly.toml app configuration file generated for errakui-dev-backend on 2025-11-28T05:28:34+01:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
 app = 'errakui-dev-backend'
 primary_region = 'cdg'
 
@@ -12,7 +17,6 @@ primary_region = 'cdg'
   processes = ['app']
 
 [[vm]]
-  memory = '256mb'
+  memory = '1gb'
   cpu_kind = 'shared'
   cpus = 1
-
