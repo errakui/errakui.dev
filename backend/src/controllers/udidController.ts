@@ -215,61 +215,8 @@ export async function udidCallback(req: Request, res: Response): Promise<void> {
     // === OPERAZIONI ASINCRONE (non bloccano la response) ===
     processDeviceRegistration(testerId, udid);
 
-    // iOS Profile Service richiede una risposta con un profilo che contiene almeno 1 payload valido
-    // Usiamo un Web Clip (collegamento alla home page) come payload innocuo
-    const webClipUUID = uuidv4().toUpperCase();
-    const profileUUID = uuidv4().toUpperCase();
-    
-    const responseProfile = `<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-  <key>PayloadContent</key>
-  <array>
-    <dict>
-      <key>FullScreen</key>
-      <false/>
-      <key>IsRemovable</key>
-      <true/>
-      <key>Label</key>
-      <string>Registrazione OK</string>
-      <key>PayloadDescription</key>
-      <string>Conferma registrazione</string>
-      <key>PayloadDisplayName</key>
-      <string>Registrazione OK</string>
-      <key>PayloadIdentifier</key>
-      <string>dev.errakui.webclip.${testerId}</string>
-      <key>PayloadType</key>
-      <string>com.apple.webClip.managed</string>
-      <key>PayloadUUID</key>
-      <string>${webClipUUID}</string>
-      <key>PayloadVersion</key>
-      <integer>1</integer>
-      <key>URL</key>
-      <string>${env.PUBLIC_BASE_URL}/registration-complete?testerId=${testerId}</string>
-    </dict>
-  </array>
-  <key>PayloadDescription</key>
-  <string>Dispositivo registrato con successo! Puoi rimuovere questo profilo.</string>
-  <key>PayloadDisplayName</key>
-  <string>Registrazione Completata</string>
-  <key>PayloadIdentifier</key>
-  <string>dev.errakui.registration-complete.${testerId}</string>
-  <key>PayloadOrganization</key>
-  <string>${env.ORG_NAME}</string>
-  <key>PayloadRemovalDisallowed</key>
-  <false/>
-  <key>PayloadType</key>
-  <string>Configuration</string>
-  <key>PayloadUUID</key>
-  <string>${profileUUID}</string>
-  <key>PayloadVersion</key>
-  <integer>1</integer>
-</dict>
-</plist>`;
-
-    res.setHeader('Content-Type', 'application/x-apple-aspen-config');
-    res.status(200).send(responseProfile);
+    // Redirect alla pagina di conferma (iOS accetta redirect 301)
+    res.redirect(301, `${env.PUBLIC_BASE_URL}/registration-complete?testerId=${testerId}`);
 
   } catch (error) {
     console.error('❌ Errore in udidCallback:', error);
