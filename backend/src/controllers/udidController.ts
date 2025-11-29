@@ -244,14 +244,12 @@ export async function udidCallback(req: Request, res: Response): Promise<void> {
     <dict>
       <key>FullScreen</key>
       <false/>
-      <key>Icon</key>
-      <data></data>
       <key>IsRemovable</key>
       <true/>
       <key>Label</key>
       <string>Registrazione OK</string>
       <key>PayloadDescription</key>
-      <string>Collegamento di conferma registrazione</string>
+      <string>Conferma registrazione</string>
       <key>PayloadDisplayName</key>
       <string>Registrazione OK</string>
       <key>PayloadIdentifier</key>
@@ -262,8 +260,6 @@ export async function udidCallback(req: Request, res: Response): Promise<void> {
       <string>${webClipUUID}</string>
       <key>PayloadVersion</key>
       <integer>1</integer>
-      <key>Precomposed</key>
-      <true/>
       <key>URL</key>
       <string>${env.PUBLIC_BASE_URL}/registration-complete?testerId=${testerId}</string>
     </dict>
