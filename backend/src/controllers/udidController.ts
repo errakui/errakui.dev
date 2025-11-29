@@ -103,26 +103,11 @@ export async function getUdid(req: Request, res: Response): Promise<void> {
 
     console.log(`📱 Generato mobileconfig per tester: ${testerId}`);
     console.log(`   Callback URL: ${callbackUrl}`);
-    console.log(`   Firma disponibile: ${signingService.isSigningAvailable()}`);
 
-    // Firma il mobileconfig se i certificati sono disponibili
-    let finalContent: Buffer;
-    if (signingService.isSigningAvailable()) {
-      try {
-        finalContent = await signingService.signMobileconfig(mobileconfig);
-        console.log('✅ Mobileconfig firmato');
-      } catch (signError) {
-        console.error('⚠️ Errore firma mobileconfig, invio non firmato:', signError);
-        finalContent = Buffer.from(mobileconfig, 'utf-8');
-      }
-    } else {
-      finalContent = Buffer.from(mobileconfig, 'utf-8');
-    }
-
-    // Imposta headers e invia il file
+    // Invia senza firma (HTTPS è sufficiente per molti casi)
     res.setHeader('Content-Type', 'application/x-apple-aspen-config');
     res.setHeader('Content-Disposition', `attachment; filename="register-device.mobileconfig"`);
-    res.send(finalContent);
+    res.send(mobileconfig);
 
   } catch (error) {
     console.error('❌ Errore in getUdid:', error);
