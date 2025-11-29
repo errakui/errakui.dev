@@ -20,6 +20,9 @@ FROM node:20-alpine AS production
 
 WORKDIR /app
 
+# Install OpenSSL for mobileconfig signing
+RUN apk add --no-cache openssl
+
 # Copy package files
 COPY package*.json ./
 
