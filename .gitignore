@@ -39,3 +39,10 @@ ios/fastlane/test_output/
 # Misc
 *.mobileconfig
 
+# Certificates - NEVER COMMIT THESE!
+certs/
+*.pem
+*.p12
+*.key
+privkey*
+
