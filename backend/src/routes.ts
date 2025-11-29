@@ -76,192 +76,6 @@ router.get('/registration-complete', (req: Request, res: Response) => {
   res.send(html);
 });
 
-// GET /manual-udid - Pagina per inserire UDID manualmente
-router.get('/manual-udid', (req: Request, res: Response) => {
-  const testerId = req.query.testerId as string;
-  
-  if (!testerId) {
-    res.status(400).send('testerId mancante');
-    return;
-  }
-
-  const html = `<!DOCTYPE html>
-<html lang="it">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Inserisci UDID Manualmente</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      padding: 20px;
-    }
-    .card {
-      background: rgba(255,255,255,0.05);
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 24px;
-      padding: 40px;
-      max-width: 500px;
-      width: 100%;
-    }
-    h1 { font-size: 1.6rem; margin-bottom: 20px; text-align: center; }
-    .steps {
-      background: rgba(0,0,0,0.3);
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 25px;
-    }
-    .steps h3 { font-size: 1rem; margin-bottom: 15px; color: #a78bfa; }
-    .steps ol { padding-left: 20px; font-size: 0.9rem; line-height: 1.8; color: rgba(255,255,255,0.8); }
-    .form-group { margin-bottom: 20px; }
-    label { display: block; margin-bottom: 8px; font-size: 0.9rem; color: rgba(255,255,255,0.8); }
-    input[type="text"] {
-      width: 100%;
-      padding: 14px 18px;
-      border: 2px solid rgba(255,255,255,0.1);
-      border-radius: 12px;
-      background: rgba(0,0,0,0.3);
-      color: white;
-      font-size: 1rem;
-      font-family: monospace;
-    }
-    input[type="text"]:focus { outline: none; border-color: #667eea; }
-    input::placeholder { color: rgba(255,255,255,0.3); }
-    button {
-      width: 100%;
-      padding: 16px;
-      border: none;
-      border-radius: 12px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      font-size: 1.1rem;
-      font-weight: 600;
-      cursor: pointer;
-    }
-    button:hover { transform: translateY(-2px); box-shadow: 0 10px 40px rgba(102, 126, 234, 0.4); }
-    .result { margin-top: 20px; padding: 15px; border-radius: 12px; display: none; }
-    .result.success { display: block; background: rgba(34, 197, 94, 0.2); border: 1px solid rgba(34, 197, 94, 0.3); }
-    .result.error { display: block; background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.3); }
-  </style>
-</head>
-<body>
-  <div class="card">
-    <h1>📱 Inserisci UDID Manualmente</h1>
-    <div class="steps">
-      <h3>Come trovare l'UDID del tuo iPhone:</h3>
-      <ol>
-        <li>Collega l'iPhone al Mac con un cavo USB</li>
-        <li>Apri <strong>Finder</strong> (macOS Catalina+) o <strong>iTunes</strong></li>
-        <li>Seleziona il tuo iPhone dalla sidebar</li>
-        <li>Clicca sul testo sotto il nome del dispositivo</li>
-        <li>Apparirà l'<strong>UDID</strong> - clicca destro e "Copia"</li>
-      </ol>
-    </div>
-    <form id="udidForm">
-      <div class="form-group">
-        <label for="udid">UDID del dispositivo</label>
-        <input type="text" id="udid" name="udid" placeholder="00000000-000000000000000A" required>
-      </div>
-      <button type="submit">Registra Dispositivo →</button>
-    </form>
-    <div id="result" class="result"></div>
-  </div>
-  <script>
-    document.getElementById('udidForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const udid = document.getElementById('udid').value.trim();
-      const result = document.getElementById('result');
-      if (!udid || udid.length < 20) {
-        result.className = 'result error';
-        result.innerHTML = '❌ UDID non valido. Deve essere almeno 20 caratteri.';
-        return;
-      }
-      try {
-        const response = await fetch('/submit-udid?testerId=${testerId}', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ udid })
-        });
-        const data = await response.json();
-        if (response.ok) {
-          result.className = 'result success';
-          result.innerHTML = '✅ Dispositivo registrato! Riceverai l\\'app via email.';
-        } else {
-          result.className = 'result error';
-          result.innerHTML = '❌ ' + (data.error || 'Errore durante la registrazione');
-        }
-      } catch (err) {
-        result.className = 'result error';
-        result.innerHTML = '❌ Errore di connessione';
-      }
-    });
-  </script>
-</body>
-</html>`;
-
-  res.send(html);
-});
-
-// POST /submit-udid - Registra UDID inserito manualmente
-router.post('/submit-udid', async (req: Request, res: Response) => {
-  const testerId = req.query.testerId as string;
-  const { udid } = req.body;
-
-  if (!testerId) {
-    res.status(400).json({ error: 'testerId mancante' });
-    return;
-  }
-
-  if (!udid || udid.length < 20) {
-    res.status(400).json({ error: 'UDID non valido' });
-    return;
-  }
-
-  const tester = TesterRepository.findById(testerId);
-  if (!tester) {
-    res.status(404).json({ error: 'Tester non trovato' });
-    return;
-  }
-
-  console.log(`📱 UDID manuale ricevuto: ${udid}`);
-  console.log(`   Tester: ${tester.email}`);
-
-  DeviceRepository.create({ udid, product: 'Manual Entry', iosVersion: 'Unknown' });
-  TesterRepository.update(testerId, { udid, status: 'DEVICE_REGISTERED' });
-
-  // Processa in background
-  (async () => {
-    try {
-      try {
-        await appStoreConnectService.registerDevice(udid);
-      } catch (e) {
-        console.error('⚠️ ASC registration failed:', e);
-      }
-
-      const build = BuildRepository.create({ testerId, devicesIncluded: [udid] });
-      TesterRepository.update(testerId, { status: 'BUILD_PENDING' });
-
-      try {
-        await ciService.triggerBuild(build.id, testerId);
-      } catch (e) {
-        console.error('❌ CI trigger failed:', e);
-        BuildRepository.update(build.id, { status: 'FAILED' });
-      }
-    } catch (e) {
-      console.error('❌ Background process failed:', e);
-    }
-  })();
-
-  res.json({ success: true, message: "Dispositivo registrato. Riceverai l'app via email." });
-});
 
 // ==========================================
 // BUILD
@@ -471,95 +285,58 @@ router.get('/', (req: Request, res: Response) => {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>errakui.dev - Registra il tuo dispositivo iOS</title>
+  <title>errakui.dev</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; color: white; padding: 20px; }
-    .card { background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); border-radius: 24px; padding: 50px 40px; max-width: 420px; width: 100%; text-align: center; }
-    .logo { font-size: 48px; margin-bottom: 10px; }
-    h1 { font-size: 1.8rem; margin-bottom: 8px; font-weight: 600; }
-    .subtitle { color: rgba(255,255,255,0.6); margin-bottom: 35px; font-size: 0.95rem; }
-    .form-group { margin-bottom: 20px; text-align: left; }
-    label { display: block; margin-bottom: 8px; font-size: 0.9rem; color: rgba(255,255,255,0.8); }
-    input[type="email"] { width: 100%; padding: 16px 20px; border: 2px solid rgba(255,255,255,0.1); border-radius: 12px; background: rgba(0,0,0,0.3); color: white; font-size: 1rem; }
-    input[type="email"]:focus { outline: none; border-color: #667eea; background: rgba(0,0,0,0.5); }
-    input[type="email"]::placeholder { color: rgba(255,255,255,0.3); }
-    button { width: 100%; padding: 16px; border: none; border-radius: 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-size: 1.1rem; font-weight: 600; cursor: pointer; margin-top: 10px; }
-    button:hover { transform: translateY(-2px); box-shadow: 0 10px 40px rgba(102, 126, 234, 0.4); }
-    button:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-    .result { margin-top: 25px; padding: 20px; border-radius: 12px; display: none; }
-    .result.success { display: block; background: rgba(34, 197, 94, 0.2); border: 1px solid rgba(34, 197, 94, 0.3); }
-    .result.error { display: block; background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.3); }
-    .result a { color: #667eea; text-decoration: none; font-weight: 600; }
-    .result a:hover { text-decoration: underline; }
-    .download-btn { display: inline-block; margin-top: 15px; padding: 12px 30px; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); border-radius: 10px; color: white; text-decoration: none; font-weight: 600; }
-    .download-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(34, 197, 94, 0.4); text-decoration: none; }
-    .steps { margin-top: 30px; padding-top: 25px; border-top: 1px solid rgba(255,255,255,0.1); text-align: left; font-size: 0.85rem; color: rgba(255,255,255,0.5); }
-    .steps h3 { color: rgba(255,255,255,0.8); margin-bottom: 12px; font-size: 0.9rem; }
-    .steps ol { padding-left: 20px; }
-    .steps li { margin-bottom: 8px; }
-    .warning { background: rgba(251, 191, 36, 0.2); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 10px; padding: 12px; margin-top: 15px; font-size: 0.85rem; color: #fbbf24; }
+    body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #0a0a0f; min-height: 100vh; display: flex; align-items: center; justify-content: center; color: white; }
+    .card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; padding: 40px; max-width: 380px; width: 90%; text-align: center; }
+    h1 { font-size: 1.5rem; margin-bottom: 30px; font-weight: 500; }
+    input { width: 100%; padding: 14px 16px; border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; background: rgba(0,0,0,0.4); color: white; font-size: 1rem; margin-bottom: 15px; }
+    input:focus { outline: none; border-color: #667eea; }
+    input::placeholder { color: rgba(255,255,255,0.3); }
+    button { width: 100%; padding: 14px; border: none; border-radius: 10px; background: #667eea; color: white; font-size: 1rem; font-weight: 600; cursor: pointer; }
+    button:disabled { opacity: 0.5; }
+    .result { margin-top: 20px; display: none; }
+    .result.show { display: block; }
+    .download-btn { display: block; padding: 14px; background: #22c55e; border-radius: 10px; color: white; text-decoration: none; font-weight: 600; margin-top: 15px; }
+    .error { color: #ef4444; margin-top: 15px; }
   </style>
 </head>
 <body>
   <div class="card">
-    <div class="logo">📱</div>
-    <h1>Registra il tuo dispositivo</h1>
-    <p class="subtitle">Inserisci la tua email per ricevere l'app</p>
-    <form id="registerForm">
-      <div class="form-group">
-        <label for="email">Email</label>
-        <input type="email" id="email" name="email" placeholder="la-tua@email.com" required>
-      </div>
-      <button type="submit" id="submitBtn">Continua →</button>
+    <h1>Installa App</h1>
+    <form id="f">
+      <input type="email" id="email" placeholder="Email" required>
+      <button type="submit" id="btn">Continua</button>
     </form>
     <div id="result" class="result"></div>
-    <div class="steps">
-      <h3>Come funziona:</h3>
-      <ol>
-        <li>Inserisci la tua email</li>
-        <li>Clicca sul link per scaricare il profilo</li>
-        <li>Installa il profilo su iPhone (Impostazioni)</li>
-        <li>Riceverai l'app via email!</li>
-      </ol>
-    </div>
   </div>
   <script>
-    const form = document.getElementById('registerForm');
-    const result = document.getElementById('result');
-    const submitBtn = document.getElementById('submitBtn');
-    form.addEventListener('submit', async (e) => {
+    document.getElementById('f').onsubmit = async (e) => {
       e.preventDefault();
-      const email = document.getElementById('email').value;
-      submitBtn.disabled = true;
-      submitBtn.textContent = 'Caricamento...';
+      const btn = document.getElementById('btn');
+      const result = document.getElementById('result');
+      btn.disabled = true;
       try {
-        const response = await fetch('/register', {
+        const r = await fetch('/register', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email })
+          body: JSON.stringify({ email: document.getElementById('email').value })
         });
-        const data = await response.json();
-        if (response.ok) {
-          result.className = 'result success';
-          const manualUrl = data.nextUrl.replace('/get-udid?', '/manual-udid?');
-          result.innerHTML = '<p>✅ Registrazione completata!</p>' +
-            '<p style="margin-top:10px; font-size:0.9rem; color:rgba(255,255,255,0.7);">Clicca il pulsante qui sotto per scaricare il profilo.</p>' +
-            '<a href="' + data.nextUrl + '" class="download-btn">📥 Scarica Profilo</a>' +
-            '<div class="warning">⚠️ Apri questo link da <strong>Safari</strong> sul tuo iPhone!</div>' +
-            '<div style="margin-top:20px; padding-top:15px; border-top:1px solid rgba(255,255,255,0.1);">' +
-            '<p style="font-size:0.85rem; color:rgba(255,255,255,0.5);">Il profilo non si installa? <a href="' + manualUrl + '" style="color:#667eea;">Inserisci UDID manualmente →</a></p></div>';
+        const d = await r.json();
+        if (r.ok) {
+          result.className = 'result show';
+          result.innerHTML = '<a href="' + d.nextUrl + '" class="download-btn">Scarica Profilo</a>';
         } else {
-          result.className = 'result error';
-          result.innerHTML = '<p>❌ ' + (data.error || 'Errore durante la registrazione') + '</p>';
+          result.className = 'result show';
+          result.innerHTML = '<p class="error">' + (d.error || 'Errore') + '</p>';
         }
       } catch (err) {
-        result.className = 'result error';
-        result.innerHTML = '<p>❌ Errore di connessione</p>';
+        result.className = 'result show';
+        result.innerHTML = '<p class="error">Errore di connessione</p>';
       }
-      submitBtn.disabled = false;
-      submitBtn.textContent = 'Continua →';
-    });
+      btn.disabled = false;
+    };
   </script>
 </body>
 </html>`;
