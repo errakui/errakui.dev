@@ -33,6 +33,10 @@ export const env = {
   SMTP_USER: process.env.SMTP_USER || '',
   SMTP_PASS: process.env.SMTP_PASS || '',
   EMAIL_FROM: process.env.EMAIL_FROM || 'no-reply@example.com',
+
+  // SSL Certificate for signing mobileconfig
+  SSL_CERT: process.env.SSL_CERT || '',
+  SSL_KEY: process.env.SSL_KEY || '',
 };
 
 /**
