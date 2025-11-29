@@ -232,6 +232,33 @@ router.get('/health', (req: Request, res: Response) => {
 });
 
 // ==========================================
+// TEST APP STORE CONNECT (ADMIN)
+// ==========================================
+
+router.get('/admin/test-asc', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const devices = await appStoreConnectService.listDevices();
+    res.json({
+      success: true,
+      message: 'Connessione App Store Connect OK!',
+      devicesCount: devices.data?.length || 0,
+      devices: devices.data?.slice(0, 5).map((d: any) => ({
+        name: d.attributes?.name,
+        udid: d.attributes?.udid?.substring(0, 8) + '...',
+        platform: d.attributes?.platform,
+        status: d.attributes?.status,
+      }))
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: 'Errore connessione App Store Connect',
+      error: error.message
+    });
+  }
+});
+
+// ==========================================
 // ADMIN DASHBOARD (CRM)
 // ==========================================
 
