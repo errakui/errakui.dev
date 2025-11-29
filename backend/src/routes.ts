@@ -24,6 +24,58 @@ router.get('/testers/:id', requireAuth, testerController.getTester);
 router.get('/get-udid', udidController.getUdid);
 router.post('/udid/callback', udidController.udidCallback);
 
+// GET /registration-complete - Pagina di conferma dopo registrazione dispositivo
+router.get('/registration-complete', (req: Request, res: Response) => {
+  const testerId = req.query.testerId as string;
+  
+  const html = `<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registrazione Completata!</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      padding: 20px;
+    }
+    .card {
+      background: rgba(255,255,255,0.1);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 24px;
+      padding: 50px 40px;
+      max-width: 420px;
+      width: 100%;
+      text-align: center;
+    }
+    .icon { font-size: 80px; margin-bottom: 20px; }
+    h1 { font-size: 1.8rem; margin-bottom: 15px; }
+    p { font-size: 1.1rem; opacity: 0.9; line-height: 1.6; margin-bottom: 15px; }
+    .note { font-size: 0.9rem; opacity: 0.7; margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.2); }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">✅</div>
+    <h1>Dispositivo Registrato!</h1>
+    <p>Il tuo dispositivo è stato registrato con successo.</p>
+    <p>Riceverai un'email con il link per scaricare l'app non appena la build sarà pronta.</p>
+    <p class="note">Puoi rimuovere il profilo "Registrazione OK" dalle Impostazioni → Generali → VPN e gestione dispositivi</p>
+  </div>
+</body>
+</html>`;
+
+  res.send(html);
+});
+
 // GET /manual-udid - Pagina per inserire UDID manualmente
 router.get('/manual-udid', (req: Request, res: Response) => {
   const testerId = req.query.testerId as string;

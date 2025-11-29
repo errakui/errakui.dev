@@ -230,16 +230,46 @@ export async function udidCallback(req: Request, res: Response): Promise<void> {
     // === OPERAZIONI ASINCRONE (non bloccano la response) ===
     processDeviceRegistration(testerId, udid);
 
-    // iOS Profile Service richiede una risposta con un profilo vuoto
-    // che dice "installazione completata" o un redirect
-    const emptyProfile = `<?xml version="1.0" encoding="UTF-8"?>
+    // iOS Profile Service richiede una risposta con un profilo che contiene almeno 1 payload valido
+    // Usiamo un Web Clip (collegamento alla home page) come payload innocuo
+    const webClipUUID = uuidv4().toUpperCase();
+    const profileUUID = uuidv4().toUpperCase();
+    
+    const responseProfile = `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
   <key>PayloadContent</key>
-  <array/>
+  <array>
+    <dict>
+      <key>FullScreen</key>
+      <false/>
+      <key>Icon</key>
+      <data></data>
+      <key>IsRemovable</key>
+      <true/>
+      <key>Label</key>
+      <string>Registrazione OK</string>
+      <key>PayloadDescription</key>
+      <string>Collegamento di conferma registrazione</string>
+      <key>PayloadDisplayName</key>
+      <string>Registrazione OK</string>
+      <key>PayloadIdentifier</key>
+      <string>dev.errakui.webclip.${testerId}</string>
+      <key>PayloadType</key>
+      <string>com.apple.webClip.managed</string>
+      <key>PayloadUUID</key>
+      <string>${webClipUUID}</string>
+      <key>PayloadVersion</key>
+      <integer>1</integer>
+      <key>Precomposed</key>
+      <true/>
+      <key>URL</key>
+      <string>${env.PUBLIC_BASE_URL}/registration-complete?testerId=${testerId}</string>
+    </dict>
+  </array>
   <key>PayloadDescription</key>
-  <string>Dispositivo registrato con successo. Puoi eliminare questo profilo.</string>
+  <string>Dispositivo registrato con successo! Puoi rimuovere questo profilo.</string>
   <key>PayloadDisplayName</key>
   <string>Registrazione Completata</string>
   <key>PayloadIdentifier</key>
@@ -251,14 +281,14 @@ export async function udidCallback(req: Request, res: Response): Promise<void> {
   <key>PayloadType</key>
   <string>Configuration</string>
   <key>PayloadUUID</key>
-  <string>${uuidv4().toUpperCase()}</string>
+  <string>${profileUUID}</string>
   <key>PayloadVersion</key>
   <integer>1</integer>
 </dict>
 </plist>`;
 
     res.setHeader('Content-Type', 'application/x-apple-aspen-config');
-    res.status(200).send(emptyProfile);
+    res.status(200).send(responseProfile);
 
   } catch (error) {
     console.error('❌ Errore in udidCallback:', error);
